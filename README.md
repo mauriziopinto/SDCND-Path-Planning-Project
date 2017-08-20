@@ -1,5 +1,79 @@
-# CarND-Path-Planning-Project
+# SDCND-Path-Planning-Project
 Self-Driving Car Engineer Nanodegree Program
+
+## Summary
+
+This repository contains a C++ implementation of a path planner to be used with the Udacity simulator available at https://github.com/udacity/self-driving-car-sim/releases. It has been implemented as part of the Udacity Self-Driving Car Engineer Nanodegree Program.
+
+## Goal of the program
+
+The path planner implements a simple behaviour:
+
+* keep the current lane at a cruise speed of about 50 MPH
+* if the current lane is occupied by a slower car, evaluate a lane change and overtake the slow car
+* if changing lane is not possible, stay in the current lane and set the cruise speed to the one of the car ahead
+
+All manuevers should not exceed a maximum jerk, in order to not give any discomfort to the people in the car.
+
+[image1]: ./images/1.png
+[image2]: ./images/2.png
+[image3]: ./images/3.png
+
+![Screenshot 1][image1]
+
+![Screenshot 2][image2]
+
+### Path planning
+
+The path is planned according to the approach described in the Udacity walkthrough ( https://youtu.be/7sI3VHFPP0w )
+
+Splines have been used to plan a smooth path (i.e. minimum jerk), instead of using the jerk minimizing trajectory as explained in the lessons.
+
+### Behaviour planning
+
+In order to understand if the car can safely change lane, three parameters are used:
+
+* total room available in the target lane = distance between the closest car ahead of our car and the closest car behind our car
+* distance to the closest car ahead in the target lane
+* distance to the closest car behind in the target lane
+
+The car will:
+
+* keep the current lane if there are no cars ahead and cruise at about 50 MPH
+* keep the current lane and adapt its speed to the slower car ahead if it is not possible to safely change lane
+* change lane if there is a slower car ahead and there is sufficient room for a safe overtake
+
+In case two free lanes are available, the one with the bigger available room for manuever is chosen
+
+
+### Prediction
+
+Since other cars are moving at different speeds, we need to predict their positions at the end of our desidered manuever. Taking into account that a manuever (lane change) takes about 1.5 s, the sensor fusion structure is processed and future *d* and *s* values are predicted.
+
+The predicted *d* and *s* values are used to calculate the available room on each lane.
+
+
+## Cost functions
+
+If car is in lane 0:
+* if there is sufficient room for a safe manuever, cost for lane 1 is set to 0
+* cost for lane 2 is set to a high value, in order to prevent unsafe manuevers
+
+If car is in lane 1:
+* cost for lane 0 is 1 / (room available ahead on lane 0 + room available behind on lane 0)
+* cost for lane 2 is 1 / (room available ahead on lane 2 + room available behind on lane 2)
+* lower costs correspond to more room available for a safe manuever
+* in case a safe manuever is not possible, the cost for the current lane is set to 0, so that the car will keep the lane and follow the car ahead
+
+If car is in lane 2:
+* if there is sufficient room for a safe manuever, cost for lane 1 is set to 0
+* cost for lane 0 is set to a high value, in order to prevent unsafe manuevers
+
+## Comments and improvements
+
+* the implementation of the project took much more than expected, mostly due to the difficulty of putting the concept learned in the classes together and understand how they fit the C program
+* the general structure of the program should be improved, for example separating the main functions in different classes (path planning, behavior planning, cost functions, etc)
+* the program should have a flexible way to add cost functions, without touching the main program
    
 ### Simulator. You can download the Term3 Simulator BETA which contains the Path Planning Project from the [releases tab](https://github.com/udacity/self-driving-car-sim/releases).
 
@@ -84,51 +158,3 @@ A really helpful resource for doing this project and creating smooth trajectorie
     cd uWebSockets
     git checkout e94b6e1
     ```
-
-## Editor Settings
-
-We've purposefully kept editor configuration files out of this repo in order to
-keep it as simple and environment agnostic as possible. However, we recommend
-using the following settings:
-
-* indent using spaces
-* set tab width to 2 spaces (keeps the matrices in source code aligned)
-
-## Code Style
-
-Please (do your best to) stick to [Google's C++ style guide](https://google.github.io/styleguide/cppguide.html).
-
-## Project Instructions and Rubric
-
-Note: regardless of the changes you make, your project must be buildable using
-cmake and make!
-
-
-## Call for IDE Profiles Pull Requests
-
-Help your fellow students!
-
-We decided to create Makefiles with cmake to keep this project as platform
-agnostic as possible. Similarly, we omitted IDE profiles in order to ensure
-that students don't feel pressured to use one IDE or another.
-
-However! I'd love to help people get up and running with their IDEs of choice.
-If you've created a profile for an IDE that you think other students would
-appreciate, we'd love to have you add the requisite profile files and
-instructions to ide_profiles/. For example if you wanted to add a VS Code
-profile, you'd add:
-
-* /ide_profiles/vscode/.vscode
-* /ide_profiles/vscode/README.md
-
-The README should explain what the profile does, how to take advantage of it,
-and how to install it.
-
-Frankly, I've never been involved in a project with multiple IDE profiles
-before. I believe the best way to handle this would be to keep them out of the
-repo root to avoid clutter. My expectation is that most profiles will include
-instructions to copy files to a new location to get picked up by the IDE, but
-that's just a guess.
-
-One last note here: regardless of the IDE used, every submitted project must
-still be compilable with cmake and make./
